@@ -1,0 +1,40 @@
+paper:
+  slug: gender-privacy-angular-constraints-for-face-recognition
+  title: "Gender Privacy: Angular Constraints for Face Recognition"
+data:
+  celeba_root: ../../datasets/celeba/extracted/celeba
+  lfw_root: ../../datasets/lfw
+  root: ../../datasets/celeba/extracted/celeba
+  train_ratio: 0.7
+  max_images: 1024
+model:
+  image_size: 112
+  embed_dim: 512
+  private_dim: 512
+  pretrained_backbone: true
+  arcface_s: 64.0
+  arcface_m: 0.0
+train:
+  protocol: smoke
+  seed: 42
+  num_workers: 2
+  batch_size: 64
+  backbone_epochs: 1
+  privacy_epochs: 2
+  optimizer: sgd
+  lr_backbone: 0.1
+  lr_privacy: 0.01
+  momentum: 0.9
+  weight_decay: 0.0005
+  alpha: 20.0
+  beta: 1.0
+eval:
+  batch_size: 64
+  max_lfw_pairs: 200
+  gender_probe_max: 512
+paths:
+  checkpoint_dir: outputs/checkpoints/smoke
+  log_dir: outputs/logs/smoke
+  pred_dir: outputs/predictions/smoke
+  figure_dir: outputs/figures/smoke
+device: cuda
