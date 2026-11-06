@@ -1,0 +1,19 @@
+# Rezgui, Strisciuglio & Veldhuis, "Gender Privacy Angular Constraints for Face
+# Recognition", IEEE TBIOM 2024, doi:10.1109/TBIOM.2024.3390586.
+#
+# Method references come from the authors' code, github.com/ZohraRezgui/genderPrivacy
+# (config/config.py, utils/losses.py, backbones/iresnet.py, finetune.py).
+source: https://github.com/ZohraRezgui/genderPrivacy
+
+authors_config:
+  alpha: 20
+  beta: 1
+  arcface_s: 64.0
+  arcface_m: 0.0
+  batch_size: 128
+  lr_privacy: 0.01
+  optimizer: adam
+
+# Fill in from the paper's tables to enable test_published_values. The PDF could
+# not be read when this suite was written, so no values are recorded here.
+published_values: null
