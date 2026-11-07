@@ -14,6 +14,8 @@ authors_config:
   lr_privacy: 0.01
   optimizer: adam
 
-# Fill in from the paper's tables to enable test_published_values. The PDF could
-# not be read when this suite was written, so no values are recorded here.
-published_values: null
+# Sec. V-A: best result of the proposed method on LFW with ElasticFace features (%).
+elasticface_lfw:
+  accg: 50.41
+  eer: 0.5
+tolerance_pp: 1.0
