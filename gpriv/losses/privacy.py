@@ -14,28 +14,25 @@ def _safe_centroid(emb: torch.Tensor) -> torch.Tensor:
 
 
 def lp1_loss(emb: torch.Tensor, gender: torch.Tensor) -> torch.Tensor:
-    """Minimize angle between male/female batch centroids → maximize cosine."""
+    """Angle between male/female batch centroids."""
     male = emb[gender == 1]
     female = emb[gender == 0]
     if male.size(0) == 0 or female.size(0) == 0:
         return emb.new_zeros(())
     cm = _safe_centroid(male)
     cf = _safe_centroid(female)
-    # maximize cos → minimize (1 - cos)
-    cos = (cm * cf).sum().clamp(-1 + 1e-6, 1 - 1e-6)
-    return 1.0 - cos
+    return (cm * cf).sum().clamp(-1 + 1e-6, 1 - 1e-6).acos()
 
 
 def lp2_loss(
     emb: torch.Tensor,
     gender: torch.Tensor,
     weight: torch.Tensor,
-    labels: torch.Tensor,
+    class_gender: torch.Tensor,
 ) -> torch.Tensor:
     """
-    Push embeddings toward opposing-gender identity-weight centroids.
-    Approximate Alg. 2: for each sample, use mean of opposite-gender class weights
-    present in the batch as the target direction; maximize cosine to that target.
+    Alg. 2: angle from each sample to the centroid of the opposite gender's identity
+    weights, taken over all identities; class_gender gives the gender of each row of weight.
     """
     w = F.normalize(weight, p=2, dim=1)
     male_mask = gender == 1
@@ -43,18 +40,13 @@ def lp2_loss(
     if male_mask.sum() == 0 or female_mask.sum() == 0:
         return emb.new_zeros(())
 
-    male_ids = labels[male_mask].unique()
-    female_ids = labels[female_mask].unique()
-    if male_ids.numel() == 0 or female_ids.numel() == 0:
-        return emb.new_zeros(())
-
-    cm_w = _safe_centroid(w[male_ids])
-    cf_w = _safe_centroid(w[female_ids])
+    cm_w = _safe_centroid(w[class_gender == 1])
+    cf_w = _safe_centroid(w[class_gender == 0])
 
     # male samples → female weight centroid; female → male
-    loss_m = (1.0 - (emb[male_mask] * cf_w).sum(dim=1)).mean() if male_mask.any() else emb.new_zeros(())
-    loss_f = (1.0 - (emb[female_mask] * cm_w).sum(dim=1)).mean() if female_mask.any() else emb.new_zeros(())
-    return 0.5 * (loss_m + loss_f)
+    loss_m = (emb[male_mask] @ cf_w).clamp(-1 + 1e-6, 1 - 1e-6).acos().mean()
+    loss_f = (emb[female_mask] @ cm_w).clamp(-1 + 1e-6, 1 - 1e-6).acos().mean()
+    return loss_m + loss_f
 
 
 def privacy_losses(
@@ -63,12 +55,13 @@ def privacy_losses(
     logits: torch.Tensor,
     labels: torch.Tensor,
     weight: torch.Tensor,
+    class_gender: torch.Tensor,
     alpha: float,
     beta: float,
 ) -> tuple[torch.Tensor, dict]:
     lr = F.cross_entropy(logits, labels)
     p1 = lp1_loss(emb, gender)
-    p2 = lp2_loss(emb, gender, weight, labels)
+    p2 = lp2_loss(emb, gender, weight, class_gender)
     total = lr + alpha * p1 + beta * p2
     return total, {
         "lr": float(lr.detach()),

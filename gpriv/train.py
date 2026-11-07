@@ -140,12 +140,12 @@ def train(cfg: dict, device_override: Optional[str] = None) -> Dict:
         s=float(cfg["model"].get("arcface_s", 64.0)),
     ).to(device)
     lr_p = float(cfg["train"].get("lr_privacy", 0.01))
-    opt_b = torch.optim.SGD(
-        list(projector.parameters()) + list(head_b.parameters()),
-        lr=lr_p,
-        momentum=mom,
-        weight_decay=wd,
-    )
+    params_b = list(projector.parameters()) + list(head_b.parameters())
+    if str(cfg["train"].get("optimizer", "adam")).lower() == "adam":
+        opt_b = torch.optim.Adam(params_b, lr=lr_p)
+    else:
+        opt_b = torch.optim.SGD(params_b, lr=lr_p, momentum=mom, weight_decay=wd)
+    class_gender = torch.as_tensor(train_ds.class_gender, device=device)
     alpha = float(cfg["train"].get("alpha", 20.0))
     beta = float(cfg["train"].get("beta", 1.0))
     epochs_b = int(cfg["train"].get("privacy_epochs", 40))
@@ -164,7 +164,7 @@ def train(cfg: dict, device_override: Optional[str] = None) -> Dict:
             priv = projector(base)
             logits = head_b(priv)
             loss, parts = privacy_losses(
-                priv, gender, logits, labels, head_b.weight, alpha, beta
+                priv, gender, logits, labels, head_b.weight, class_gender, alpha, beta
             )
             opt_b.zero_grad(set_to_none=True)
             loss.backward()

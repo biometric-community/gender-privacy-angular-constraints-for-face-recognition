@@ -89,6 +89,11 @@ class CelebAGenderDataset(Dataset):
         remap = {s: i for i, s in enumerate(uniq)}
         self.samples = [(fn, remap[sid], g) for fn, sid, g in rows]
         self.num_classes = len(uniq)
+        # one gender per identity: the majority over its images
+        ids = np.array([s[1] for s in self.samples], dtype=np.int64)
+        male = np.array([s[2] for s in self.samples], dtype=np.float64)
+        votes = np.bincount(ids, weights=male, minlength=self.num_classes)
+        self.class_gender = (2 * votes >= np.bincount(ids, minlength=self.num_classes)).astype(np.int64)
 
     def __len__(self) -> int:
         return len(self.samples)

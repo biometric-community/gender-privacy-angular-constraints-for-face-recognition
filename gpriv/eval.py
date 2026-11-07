@@ -58,23 +58,26 @@ def embed_pairs(backbone, projector, loader, device, use_privacy: bool):
     return np.concatenate(scores), np.concatenate(labels)
 
 
+def equal_error_rate(scores: np.ndarray, labels: np.ndarray) -> float:
+    """Error rate at the threshold where FMR and FNMR are closest."""
+    mated = labels[np.argsort(scores)] == 1
+    if mated.all() or not mated.any():
+        return 1.0
+    fnmr = np.cumsum(mated) / mated.sum()
+    fmr = 1.0 - np.cumsum(~mated) / (~mated).sum()
+    i = int(np.argmin(np.abs(fmr - fnmr)))
+    return float(0.5 * (fmr[i] + fnmr[i]))
+
+
 def best_accuracy(scores: np.ndarray, labels: np.ndarray) -> Tuple[float, float]:
-    """Sweep thresholds; return best accuracy and EER approx."""
+    """Sweep thresholds; return best accuracy and EER."""
     thresholds = np.linspace(scores.min(), scores.max(), 200)
     best_acc = 0.0
-    best_eer = 1.0
     for t in thresholds:
         pred = (scores >= t).astype(np.int32)
         acc = (pred == labels).mean()
         best_acc = max(best_acc, float(acc))
-        # FPR / FNR
-        pos = labels == 1
-        neg = ~pos
-        if pos.any() and neg.any():
-            fpr = (pred[neg] == 1).mean()
-            fnr = (pred[pos] == 0).mean()
-            best_eer = min(best_eer, float(0.5 * (fpr + fnr)))
-    return best_acc, best_eer
+    return best_acc, equal_error_rate(scores, labels)
 
 
 @torch.no_grad()

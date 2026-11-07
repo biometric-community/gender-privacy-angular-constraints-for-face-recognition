@@ -47,9 +47,10 @@ def outcome():
     head = NormSoftmax(DIM, IDS, s=64.0)
     opt = torch.optim.Adam(list(projector.parameters()) + list(head.parameters()), lr=1e-3)
     xs, ys, gs = torch.tensor(x), torch.tensor(y), torch.tensor(g)
+    class_gender = torch.arange(IDS) % 2
     for _ in range(400):
         emb = projector(xs)
-        loss, _ = privacy_losses(emb, gs, head(emb), ys, head.weight, alpha=20.0, beta=1.0)
+        loss, _ = privacy_losses(emb, gs, head(emb), ys, head.weight, class_gender, alpha=20.0, beta=1.0)
         opt.zero_grad()
         loss.backward()
         opt.step()

@@ -35,9 +35,13 @@ def _parse_pairs(pairs_path: Path, max_pairs: Optional[int] = None):
             a = f"{n1}/{n1}_{int(i1):04d}.jpg"
             b = f"{n2}/{n2}_{int(i2):04d}.jpg"
             out.append((a, b, 0))
-        if max_pairs is not None and len(out) >= max_pairs:
-            break
-    return out
+    if max_pairs is None or len(out) <= max_pairs:
+        return out
+    # pairs.txt lists each fold's mated pairs first, so keep both classes explicitly
+    pos = [p for p in out if p[2] == 1]
+    neg = [p for p in out if p[2] == 0]
+    n = max_pairs // 2
+    return pos[:n] + neg[:n]
 
 
 class LFWPairsDataset(Dataset):

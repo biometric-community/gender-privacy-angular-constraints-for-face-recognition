@@ -21,7 +21,7 @@ train:
   batch_size: 64
   backbone_epochs: 1
   privacy_epochs: 2
-  optimizer: sgd
+  optimizer: adam
   lr_backbone: 0.1
   lr_privacy: 0.01
   momentum: 0.9

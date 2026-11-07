@@ -14,7 +14,6 @@ class PrivacyProjector(nn.Module):
             nn.Linear(in_dim, private_dim),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(private_dim, private_dim),
-            nn.LeakyReLU(0.2, inplace=True),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

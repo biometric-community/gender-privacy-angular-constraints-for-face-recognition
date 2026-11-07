@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from gpriv.data.celeba import CelebAGenderDataset
 from gpriv.data.lfw import _parse_pairs
 from gpriv.eval import best_accuracy, gender_accg
 from gpriv.losses.privacy import lp1_loss, lp2_loss
@@ -51,7 +52,18 @@ def test_lp1_is_the_centroid_angle(batch):
 def test_lp2_uses_angles_to_all_opposite_gender_identities(batch):
     emb, gender, weight, labels, class_gender = batch
     expected = authors_p2(emb, gender, weight, class_gender).item()
-    assert lp2_loss(emb, gender, weight, labels).item() == pytest.approx(expected, abs=1e-4)
+    assert lp2_loss(emb, gender, weight, class_gender).item() == pytest.approx(expected, abs=1e-4)
+
+
+def test_each_identity_gets_its_majority_gender(tmp_path):
+    images = tmp_path / "img_align_celeba"
+    images.mkdir()
+    (tmp_path / "identity_CelebA.txt").write_text("a.jpg 1\nb.jpg 1\nc.jpg 1\nd.jpg 2\n")
+    (tmp_path / "list_attr_celeba.txt").write_text(
+        "4\nMale\na.jpg 1\nb.jpg 1\nc.jpg -1\nd.jpg -1\n"
+    )
+    ds = CelebAGenderDataset(tmp_path, split="train", train_ratio=1.0)
+    assert ds.class_gender.tolist() == [1, 0]
 
 
 def test_projector_has_two_fc_layers():
