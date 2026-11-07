@@ -90,7 +90,7 @@ def write_report(cfg, train_s, eval_res, report_path: Path) -> None:
         f"| Original | {o['lfw_accuracy']*100:.2f}% | {o['lfw_eer']*100:.2f}% | {o['gender']['accg']*100:.2f}% |",
         f"| Private (Lp1+Lp2) | {p['lfw_accuracy']*100:.2f}% | {p['lfw_eer']*100:.2f}% | {p['gender']['accg']*100:.2f}% |",
         "",
-        f"- PIC proxy (PG−IL): **{pic.get('pic', float('nan')):.4f}** (PG={pic.get('pg', float('nan')):.4f}, IL={pic.get('il', float('nan')):.4f})",
+        f"- PIC (PG−IL): **{pic.get('pic', float('nan')):.4f}** (PG={pic.get('pg', float('nan')):.4f}, IL={pic.get('il', float('nan')):.4f})",
         "",
         "## Training",
         "",

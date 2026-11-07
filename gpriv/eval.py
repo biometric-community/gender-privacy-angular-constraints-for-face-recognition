@@ -180,10 +180,12 @@ def evaluate(cfg: dict, device_override: Optional[str] = None) -> Dict:
         results[tag]["n_gender_probe"] = int(len(gender))
         print(f"[{tag}] ACCG={g['accg']:.4f} svm={g['linear_svm']:.4f} lr={g['logreg']:.4f}")
 
-    # PIC-like: privacy gain - identity loss (higher better)
-    pg = results["original"]["gender"]["accg"] - results["private"]["gender"]["accg"]
-    il = results["private"]["lfw_eer"] - results["original"]["lfw_eer"]
-    results["pic"] = {"pg": float(pg), "il": float(il), "pic": float(pg - il)}
+    results["pic"] = pic_scores(
+        results["original"]["gender"]["accg"],
+        results["private"]["gender"]["accg"],
+        results["original"]["lfw_eer"],
+        results["private"]["lfw_eer"],
+    )
 
     log_dir = Path(cfg["paths"]["log_dir"])
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -193,6 +195,13 @@ def evaluate(cfg: dict, device_override: Optional[str] = None) -> Dict:
         f.write("\n")
     print(f"Wrote {out}")
     return results
+
+
+def pic_scores(accg_before: float, accg_after: float, eer_before: float, eer_after: float) -> dict:
+    """Eqs. 6-7: PIC = PG - IL, both relative to the original embeddings (higher is better)."""
+    pg = (accg_before - accg_after) / max(1.0 - accg_before, 1e-12)
+    il = (eer_after - eer_before) / max(eer_before, 1e-12)
+    return {"pg": float(pg), "il": float(il), "pic": float(pg - il)}
 
 
 def main() -> None:

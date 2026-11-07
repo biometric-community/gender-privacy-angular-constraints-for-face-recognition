@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 from gpriv.data.celeba import CelebAGenderDataset
 from gpriv.data.lfw import _parse_pairs
-from gpriv.eval import best_accuracy, gender_accg
+from gpriv.eval import best_accuracy, gender_accg, pic_scores
 from gpriv.losses.privacy import lp1_loss, lp2_loss
 from gpriv.models.privacy_head import PrivacyProjector
 
@@ -42,6 +42,14 @@ def batch():
     labels = torch.arange(8).repeat(4)  # only 8 of the 20 identities are in the batch
     emb = F.normalize(torch.randn(32, 32), dim=1)
     return emb, class_gender[labels], weight, labels, class_gender
+
+
+def test_pic_is_relative_to_the_original_embeddings():
+    """Eqs. 6-7: gender error 0.1 -> 0.4 is a gain of 3; EER 0.02 -> 0.03 is a loss of 0.5."""
+    scores = pic_scores(0.9, 0.6, 0.02, 0.03)
+    assert scores["pg"] == pytest.approx(3.0)
+    assert scores["il"] == pytest.approx(0.5)
+    assert scores["pic"] == pytest.approx(2.5)
 
 
 def test_lp1_is_the_centroid_angle(batch):
